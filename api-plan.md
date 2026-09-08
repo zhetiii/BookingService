@@ -5,3 +5,5 @@
 - `GetBookingById(Guid id)` — получение сведений о бронировании
 - `CancelBooking(Guid id)` — отмена брони
 - `GetAvailableRooms()` — список доступных мест
+
+- POST /api/v1/bookings — создание бронирования
