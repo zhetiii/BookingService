@@ -1,32 +1,70 @@
-namespace BookingService;
+using Microsoft.EntityFrameworkCore;
 
-public class Program
+var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+                       ?? "Host=db;Port=5432;Database=app;Username=postgres;Password=1234";
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
 {
-    public static void Main(string[] args)
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
+
+app.MapGet("/bookings", async (AppDbContext db) => 
+    await db.Bookings.ToListAsync());
+
+app.MapGet("/bookings/{id:int}", async (int id, AppDbContext db) =>
+    await db.Bookings.FindAsync(id) is Booking booking ? Results.Ok(booking) : Results.NotFound());
+
+app.MapPost("/bookings", async (Booking booking, AppDbContext db) =>
+{
+    db.Bookings.Add(booking);
+    await db.SaveChangesAsync();
+    return Results.Created($"/bookings/{booking.Id}", booking);
+});
+
+app.MapPut("/bookings/{id:int}", async (int id, Booking updated, AppDbContext db) =>
+{
+    var booking = await db.Bookings.FindAsync(id);
+    if (booking is null) return Results.NotFound();
+    
+    booking.CustomerName = updated.CustomerName;
+    booking.RoomType = updated.RoomType;
+    booking.Days = updated.Days;
+    
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+app.MapDelete("/bookings/{id:int}", async (int id, AppDbContext db) =>
+{
+    if (await db.Bookings.FindAsync(id) is Booking booking)
     {
-        var builder = WebApplication.CreateBuilder(args);
-
-        // Настраиваем сервер на прослушивание порта 8080 внутри контейнера
-        builder.WebHost.UseUrls("http://+:8080");
-
-        var app = builder.Build();
-
-        // 1. Endpoint проверки здоровья API
-        app.MapGet("/health", () => Results.Ok(new 
-        { 
-            status = "Healthy", 
-            message = "Система Бронирования Сервис v1.0 запущена и готова к работе",
-            timestamp = DateTime.UtcNow 
-        }));
-
-        // 2. Endpoint по теме проекта BookingService
-        app.MapGet("/api/bookings", () => Results.Ok(new[]
-        {
-            new { Id = 1, Room = "Конференц-зал А", User = "Иван Иванов", Date = "2026-10-01", Status = "Confirmed" },
-            new { Id = 2, Room = "Переговорка Б", User = "Диколенко Евгения", Date = "2026-10-02", Status = "Pending" },
-            new { Id = 3, Room = "Рабочее место №12", User = "Морозов Дмитрий", Date = "2026-10-03", Status = "Confirmed" }
-        }));
-
-        app.Run();
+        db.Bookings.Remove(booking);
+        await db.SaveChangesAsync();
+        return Results.Ok(booking);
     }
+    return Results.NotFound();
+});
+
+app.Run();
+
+public class Booking
+{
+    public int Id { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string RoomType { get; set; } = string.Empty;
+    public int Days { get; set; }
+}
+
+public class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+    public DbSet<Booking> Bookings => Set<Booking>();
 }

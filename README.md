@@ -89,3 +89,5 @@ info: Microsoft.Hosting.Lifetime[0]
 info: Microsoft.Hosting.Lifetime[0]
       Content root path: /app
 ```
+# Booking Service Project
+Консольное C# приложение для управления бронированием.
