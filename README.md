@@ -89,5 +89,21 @@ info: Microsoft.Hosting.Lifetime[0]
 info: Microsoft.Hosting.Lifetime[0]
       Content root path: /app
 ```
+
+
+## Запуск приложения через Docker
+
+Для автоматического развёртывания всех компонентов системы (Web API, база данных PostgreSQL и кэш Redis) используется **Docker Compose**.
+
+### Предварительные требования
+Установленный **Docker** и **Docker Compose**.
+
+### Шаги для запуска
+
+1. **Запуск всех сервисов:**
+   Выполните команду в корневой директории проекта:
+   ```bash
+   docker compose up --build -d
+
 # Booking Service Project
 Консольное C# приложение для управления бронированием.
