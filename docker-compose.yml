@@ -1,5 +1,14 @@
 version: '3.8'
 
+redis:
+    image: redis:alpine
+    container_name: booking-cache
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - booking-net
+
 services:
   db:
     image: postgres:16
